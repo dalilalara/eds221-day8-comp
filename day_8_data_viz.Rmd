@@ -23,7 +23,7 @@ library(ggExtra)
 library(ggbeeswarm)
 library(gapminder)
 
-#library(sf)
+library(sf)
 ```
 
 ### Read in lizard data
@@ -123,5 +123,178 @@ ggplot(data = lizards, aes(x = total_length, y = weight)) +
        subtitle = "All lizards follow the standard length weight relationship with Western whiptails as largest.",
        caption = "Data Jornada Basin lizards")
 ```
+
+Scales 
+  - Qualitative scales distinguish groups
+  - Sequenntial scales indicate values or value order
+  - diverging scales when there's an obvious mid point and you want to show how much higher or lower things are from it 
+  - highlights point something of interest 
+  
+### fun with scales 
+
+```{r}
+#2 color gradient
+ggplot(data = lizards,
+       aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_color_gradient(low = "purple", high = "orange")
+```
+
+```{r}
+#mutlicolor gradient
+ggplot(data = lizards,
+       aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_color_gradientn(colors = c("magenta", "cyan4", "darkorchid3", "dodgerblue", "green", "yellow"))
+```
+
+```{r}
+#scale_color_steps
+ggplot(data = lizards,
+       aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_color_steps(low = "red", high = "black")
+
+#break points specified with thresholds
+ggplot(data = lizards,
+       aes(x = total_length, y = weight)) +
+  geom_point(aes(color = total_length)) +
+  scale_color_steps2(low = "purple",
+                     mid = "white",
+                     high = "orange",
+                     midpoint = 150,
+                     breaks = c(50, 75, 150))
+```
+
+```{r}
+#breaks specified
+ggplot(data = lizards,
+       aes(x = total_length, y = weight)) +
+  geom_point(aes(color = total_length)) +
+  scale_color_stepsn(colors = c("orange", "red", "purple"),
+                     breaks = seq(from = 0, 
+                                  to = 300, 
+                                  by = 60))
+
+```
+
+Horizontal Box plot 
+Wrangling and ggplot 
+```{r}
+#y common name and x total length fill color changes on common name 
+#factor reorder outside of ggplot 
+#data wrangling outside ggplot
+
+#put in order according to median length by species common name
+lizards_median <- lizards |>
+  mutate(common_name = fct_reorder(common_name, total_length, .fun = median ))
+
+#from lowest median to highest median
+levels(lizards_median$common_name)      
+
+#ordered and removes legend
+ggplot(data = lizards_median, aes(y = common_name, x = total_length)) +
+  geom_boxplot(aes(fill = common_name), show.legend = FALSE)
+
+#not ordered
+ggplot(data = lizards, aes(y = common_name, x = total_length)) +
+  geom_boxplot(aes(fill = common_name))
+
+#color palettes 
+#ordered and removes legend and scale_fill_palettteer_d()
+ggplot(data = lizards_median, aes(y = common_name, x = total_length)) +
+  geom_boxplot(aes(fill = common_name), show.legend = FALSE) +
+  scale_fill_paletteer_d(palette = "beyonce::X77") +
+  theme_minimal()
+
+#view(palettes_d_names)
+```
+
+```{r}
+ggplot(data = lizards,
+       aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  theme_minimal() +
+  #red grid line
+  #theme(panel.grid = element_line(color = "red"))
+
+  #only x grid lines are red
+  theme(panel.grid.major.x = element_line(color = "red"),
+  #y minor grid green color
+  #panel.grid.minor.y = element_line(color = "green"))
+        panel.grid.minor.y = element_blank(), 
+  #change axis title colors
+        axis.title.x = element_text(color = "purple", size = 10),
+        axis.title.y = element_text(color = "green", size = 10),
+  #change text size
+        text = element_text(size = 16),
+  #plot background
+  #adding line to graph
+        panel.background = element_rect(color = "red", fill = "cyan3")) +
+        annotate("text", x = 300, y = 50, label = "Wooo", color = "blue") +
+        geom_vline(xintercept = 250, linetype = "dashed", color = "pink", size = 4)
+```
+
+Repulsive labels with `ggrepel`
+
+```{r}
+#make subsets with specified site and lizards
+wws_lizards <- lizards |>
+  filter(common_name == "western whiptail",
+         site == "sand")
+```
+
+```{r}
+# `geom_text_repel`
+ggplot(data = wws_lizards, 
+       aes(x = total_length,
+           y = weight)) +
+  geom_point() +
+  geom_text_repel(aes(label = toe_num)) 
+```
+
+```{r}
+#view(gapminder)
+gapminder |>
+  filter(year == 2002,
+         continent == "Europe") |>
+  ggplot(aes(x = gdpPercap, y = lifeExp)) +
+  geom_point() +
+  geom_text_repel(aes(label = country), size = 3)
+```
+
+`gghighlight`
+```{r}
+ggplot(data = lizards, 
+       aes(x = total_length,
+           y = weight)) +
+  geom_point() +
+  gghighlight(weight > 30, label_key = toe_num)
+```
+
+### MAPS Make a map
+```{r}
+# read in sf data 
+jornada_veg <- read_sf(here("data_raw", "spatial_vegetation", "doc.kml"))
+
+ggplot( data = jornada_veg) +
+  geom_sf(aes(fill = Name),
+          color = NA) +
+  theme_minimal() +
+  scale_fill_paletteer_d(palette = "ggthemes::manyeys")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
